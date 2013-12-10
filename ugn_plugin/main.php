@@ -265,19 +265,28 @@ add_action('save_post',
 
 
 /**
- * hook into the_post and tack on our formatted extra content
+ * hook into the_content and tack on our formatted extra content
  */
 add_action('the_content',
     function ($content) use ($joblist_metabox) {
-        global $post;
-        if ( $post->post_type !== JOBLIST_POST_TYPE ) { return; }   # if this isn't our party, leave
+        global $post;   # we need the post_type so we can tell if this is a post we care about, and the post id to get the metadata
+        if ( $post->post_type !== JOBLIST_POST_TYPE ) { return $content; }   # if this isn't our party, leave
 
-        foreach ($joblist_metabox['fields'] as $field) {
-            $meta = get_post_meta($post->ID, $field['id'], true);
-            # todo: format custom fields here
-            $content .= "<br />{$field['name']} $meta";    # this is just filler
+        foreach ($joblist_metabox['fields'] as $field) {                # loop through our custom fields
+            $meta = get_post_meta($post->ID, $field['id'], true);       # get the value for each field for this post
+            switch ($field['id']) {
+            case 'work_study':
+                if ($meta === "Value 1") {
+                    $content .= "<br />{$field['name']} Yes";
+                } else {
+                    $content .= "<br />{$field['name']} No";
+                }
+                break;
+            default:
+                $content .= "<br />{$field['name']} $meta";                 # append the field name and value to the content that will be displayed
+            }
         }
-        return $content;
+        return $content;    # return the filtered content
     }
 );
 
@@ -293,29 +302,3 @@ function wp_custom_attachment() {
     echo $html;
 }
 
-/*
-function job_page(){
-	echo ("hello world");
-	 $my_post = array(
-  'post_title'    => 'cookiepolicy',
-  'post_content'  => 'this is my content',
-  'post_type'     => 'page',
-  'post_status'   => 'publish',
-  'post_author'   => 1,
-  'post_category' => array( 3,4 )
-  );
-
-  // Insert the post into the database
-  wp_insert_post( $my_post );
-}
-
-
-if ( have_posts() ) {
-		while ( have_posts() ) {
-			the_post(); 
-
-				query_posts( 'post_type=labels');
-
-		} // end while
-	} // end if
-*/
